@@ -24,7 +24,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-class CcavenueValidationModuleFrontController extends ModuleFrontController
+class Kk_CcavenueValidationModuleFrontController extends ModuleFrontController
 {
     /**
      * This class should be use by your Instant Payment
@@ -38,7 +38,7 @@ class CcavenueValidationModuleFrontController extends ModuleFrontController
         // Check that this payment option is still available in case the customer changed his address just before the end of the checkout process
         $authorized = false;
         foreach (Module::getPaymentModules() as $module) {
-            if ($module['name'] == 'ccavenue') {
+            if ($module['name'] == 'kk_ccavenue') {
                 $authorized = true;
                 break;
             }
@@ -122,7 +122,7 @@ class CcavenueValidationModuleFrontController extends ModuleFrontController
         if($responseData["status_message"] != "null")
                 $this->errors[] = $this->l($responseData["status_message"]);
 
-        $this->errors[] = $this->l("Please contact the merchant to have more informations");
+        $this->errors[] = $this->l("Please try again or contact the merchant to have more informations");
         
         return $this->redirectWithNotifications($checkoutUrl);
     }   

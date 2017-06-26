@@ -31,13 +31,13 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-class Ccavenue extends PaymentModule
+class Kk_Ccavenue extends PaymentModule
 {
     protected $config_form = false;
 
     public function __construct()
     {
-        $this->name = 'ccavenue';
+        $this->name = 'kk_ccavenue';
         $this->tab = 'payments_gateways';
         $this->version = '1.0.0';
         $this->author = 'Kaviarasan K K';
@@ -254,7 +254,7 @@ class Ccavenue extends PaymentModule
             ->setAction("https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction")
             ->setInputs($this->getPaymentDetails())
             ->setLogo(Media::getMediaPath(_PS_MODULE_DIR_.$this->name.'/views/img/ccavenue_logo_sm.png'))
-            ->setAdditionalInformation($this->fetch('module:ccavenue/views/templates/hook/payment.tpl'));
+            ->setAdditionalInformation($this->fetch('module:kk_ccavenue/views/templates/hook/payment.tpl'));
 
         $payment_options = [
             $newOption,
@@ -282,8 +282,8 @@ class Ccavenue extends PaymentModule
         $ccavenue_payment_total = $cart->getOrderTotal(true, 3);
 
         //URL
-        $Redirect_Url = $this->context->link->getModuleLink('ccavenue', 'validation', [], true);
-        $Cancel_Url  = $this->context->link->getModuleLink('ccavenue', 'validation', ['action' => 'error'], true);
+        $Redirect_Url = $this->context->link->getModuleLink('kk_ccavenue', 'validation', [], true);
+        $Cancel_Url  = $this->context->link->getModuleLink('kk_ccavenue', 'validation', ['action' => 'error'], true);
 
         //Billing Address
         $billing_address = new Address(intval($cart->id_address_invoice));
