@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <module>
-    <name>ccavenue</name>
+    <name>kk_ccavenue</name>
     <displayName><![CDATA[CCAvenue]]></displayName>
     <version><![CDATA[1.0.0]]></version>
     <description><![CDATA[CC Avenue Payment Gateway ]]></description>
