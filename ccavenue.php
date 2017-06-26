@@ -71,8 +71,9 @@ class Ccavenue extends PaymentModule
 
         include(dirname(__FILE__).'/sql/install.php');
 
-        return parent::install() &&
-            $this->registerHook('paymentOptions');
+        return parent::install() 
+            &&  $this->registerHook('paymentOptions')
+            &&  $this->registerHook('paymentReturn');
     }
 
     public function uninstall()
@@ -286,7 +287,7 @@ class Ccavenue extends PaymentModule
         return $payment_options;
     }
 
-    public function hookDisplayPaymentReturn($params)
+    public function hookPaymentReturn($params)
     {
 
         if ($this->active == false)

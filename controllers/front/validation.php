@@ -32,9 +32,31 @@ class CcavenueValidationModuleFrontController extends ModuleFrontController
      */
     public function postProcess()
     {
+        // URLS
+        $checkoutUrl = __PS_BASE_URI__.'order.php?step=1';
+
+        // Check that this payment option is still available in case the customer changed his address just before the end of the checkout process
+        $authorized = false;
+        foreach (Module::getPaymentModules() as $module) {
+            if ($module['name'] == 'ccavenue') {
+                $authorized = true;
+                break;
+            }
+        }
+
+        if (!$authorized) {
+            $this->errors[] = $this->l('This payment method is not available.');
+            $this->redirectWithNotifications($checkoutUrl);
+        }
 
         //Fetch the response from CCAvenue
         $encResp = Tools::getValue('encResp');
+
+        if (empty($encResp)) {
+
+            $this->errors[] = $this->l('An error occured');
+            $this->redirectWithNotifications($checkoutUrl);
+        }
 
         $encryptionKey = Configuration::get('CCAVENUE_ENCRYPTION_KEY');
         $response = $this->module->decrypt($encResp, $encryptionKey);
@@ -63,12 +85,8 @@ class CcavenueValidationModuleFrontController extends ModuleFrontController
         $module_name = $this->module->displayName;
         $module_id = $this->module->id;
 
-        // URLS
-        $checkoutUrl = __PS_BASE_URI__.'order.php?step=1';
-        $confirmationUrl = __PS_BASE_URI__.'order-confirmation.php?key='.$secure_key.'&id_cart='.(int)$cart_id.'&id_module='.(int)$module_id.'&id_order='.(int)$order_id;
-
         // echo "<pre>";
-        // print_r($this);
+        // print_r($cart);
         // die;
 
         if ($customer_id == 0 || $cart->id_address_delivery == 0 || $cart->id_address_invoice == 0 || !$this->module->active) {
@@ -77,19 +95,7 @@ class CcavenueValidationModuleFrontController extends ModuleFrontController
             $this->redirectWithNotifications($checkoutUrl);
         }
 
-        // Check that this payment option is still available in case the customer changed his address just before the end of the checkout process
-        $authorized = false;
-        foreach (Module::getPaymentModules() as $module) {
-            if ($module['name'] == 'ccavenue') {
-                $authorized = true;
-                break;
-            }
-        }
-
-        if (!$authorized) {
-            $this->errors[] = $this->l('This payment method is not available.');
-            $this->redirectWithNotifications($checkoutUrl);
-        }
+       
         
         if (!Validate::isLoadedObject($customer)) {
             $this->errors[] = $this->l('An error occured');
@@ -97,12 +103,18 @@ class CcavenueValidationModuleFrontController extends ModuleFrontController
         }
 
         if($order_status !== "Success")
-        {
+        {   
+
+            $currency_id = (int)Context::getContext()->currency->id;
 
             $payment_status = Configuration::get('PS_OS_PAYMENT'); 
             $this->success[] = $this->l("Thank you for shopping with us. Your transaction is successful. We will be shipping your order to you soon.");
 
-            $this->module->validateOrder($cart_id, $payment_status, $total, $module_name, null, array(), null, false, $secure_key);
+            $this->module->validateOrder($cart_id, $payment_status, $amount, $module_name, null, array(), $currency_id, false, $secure_key);
+
+            $confirmationUrl = __PS_BASE_URI__.'order-confirmation.php?key='.$secure_key.'&id_cart='.(int)$cart_id.'&id_module='.(int)$module_id.'&id_order='.(int)$order_id;
+
+            $this->context->smarty->assign('displayPrice', $amount);
 
             $this->redirectWithNotifications($confirmationUrl);
         }

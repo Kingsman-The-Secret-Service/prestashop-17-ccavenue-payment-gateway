@@ -23,7 +23,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-{if (isset($status) == true) && ($status == 'ok')}
+<!-- {if (isset($status) == true) && ($status == 'ok')}
 <h3>{l s='Your order on %s is complete.' sprintf=$shop_name mod='ccavenue'}</h3>
 <p>
 	<br />- {l s='Amount' mod='ccavenue'} : <span class="price"><strong>{$total|escape:'htmlall':'UTF-8'}</strong></span>
@@ -39,4 +39,4 @@
 	<br /><br />{l s='If you have questions, comments or concerns, please contact our' mod='ccavenue'} <a href="{$link->getPageLink('contact', true)|escape:'html':'UTF-8'}">{l s='expert customer support team.' mod='ccavenue'}</a>
 </p>
 {/if}
-<hr />
+<hr /> -->
