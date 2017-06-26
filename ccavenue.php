@@ -24,6 +24,9 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
+use PrestaShop\PrestaShop\Core\Payment\PaymentOption;
+
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -69,12 +72,7 @@ class Ccavenue extends PaymentModule
         include(dirname(__FILE__).'/sql/install.php');
 
         return parent::install() &&
-            $this->registerHook('header') &&
-            $this->registerHook('backOfficeHeader') &&
-            $this->registerHook('actionPaymentConfirmation') &&
-            $this->registerHook('displayPayment') &&
-            $this->registerHook('paymentOptions') &&
-            $this->registerHook('displayPaymentReturn');
+            $this->registerHook('paymentOptions');
     }
 
     public function uninstall()
@@ -267,35 +265,23 @@ class Ccavenue extends PaymentModule
         }
     }
 
-    /**
-    * Add the CSS & JavaScript files you want to be loaded in the BO.
-    */
-    public function hookBackOfficeHeader()
+    public function hookPaymentOptions($params)
     {
-        if (Tools::getValue('module_name') == $this->name) {
-            $this->context->controller->addJS($this->_path.'views/js/back.js');
-            $this->context->controller->addCSS($this->_path.'views/css/back.css');
+        if (!$this->active) {
+            return;
         }
-    }
 
-    /**
-     * Add the CSS & JavaScript files you want to be added on the FO.
-     */
-    public function hookHeader()
-    {
-        $this->context->controller->addJS($this->_path.'/views/js/front.js');
-        $this->context->controller->addCSS($this->_path.'/views/css/front.css');
-    }
+        $newOption = new PaymentOption();
+        $newOption->setCallToActionText($this->trans('Pay by CCAvenue', array(), 'Modules.Ccavenue.Shop'))
+            ->setAction("https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction")
+            ->setInputs($this->getPaymentDetails())
+            ->setAdditionalInformation($this->fetch('module:ccavenue/views/templates/hook/payment.tpl'));
 
-    public function hookActionPaymentConfirmation()
-    {
-        
-    }
+        $payment_options = [
+            $newOption,
+        ];
 
-    public function hookDisplayPayment()
-    {
-        $this->context->smarty->assign($this->getPaymentDetails());
-        return $this->display(__FILE__, 'views/templates/hook/payment.tpl');
+        return $payment_options;
     }
 
     public function hookDisplayPaymentReturn($params)
@@ -319,7 +305,7 @@ class Ccavenue extends PaymentModule
         return $this->display(__FILE__, 'views/templates/hook/payment_return.tpl');
     }
 
-    public function getPaymentDetails(){
+     public function getPaymentDetails(){
         
         $cart = Context::getContext()->cart;
 
@@ -413,7 +399,10 @@ class Ccavenue extends PaymentModule
 
         $encrypted_data=$this->encrypt(http_build_query($merchant_data),$encryption_key);
 
-        return array('encRequest' => $encrypted_data, 'access_code' => $access_code);
+        return array(
+            array('type'=>'hidden','name'=>'encRequest','value' => $encrypted_data ),
+            array('type'=>'hidden','name'=>'access_code','value' => $access_code)
+        );
     }
 
     /****************** CRYPTO ccavenue *****************/
@@ -457,26 +446,28 @@ class Ccavenue extends PaymentModule
     //********** Hexadecimal to Binary function for php 4.0 version ********
 
     function hextobin($hexString) 
-     { 
-            $length = strlen($hexString); 
-            $binString="";   
-            $count=0; 
-            while($count<$length) 
-            {       
-                $subString =substr($hexString,$count,2);           
-                $packedString = pack("H*",$subString); 
-                if ($count==0)
-            {
-                $binString=$packedString;
-            } 
-                
-            else 
-            {
-                $binString.=$packedString;
-            } 
-                
-            $count+=2; 
-            } 
-            return $binString; 
-          } 
+    { 
+        $length = strlen($hexString); 
+        $binString="";   
+        $count=0; 
+        while($count<$length) 
+        {       
+            $subString =substr($hexString,$count,2);           
+            $packedString = pack("H*",$subString); 
+            if ($count==0)
+        {
+            $binString=$packedString;
+        } 
+            
+        else 
+        {
+            $binString.=$packedString;
+        } 
+            
+        $count+=2; 
+        } 
+        return $binString; 
+    } 
+
+   
 }

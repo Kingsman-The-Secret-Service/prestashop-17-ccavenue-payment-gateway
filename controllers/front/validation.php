@@ -33,15 +33,9 @@ class CcavenueValidationModuleFrontController extends ModuleFrontController
     public function postProcess()
     {
 
-         /**
-         * If the module is not active anymore, no need to process anything.
-         */
-        if ($this->module->active == false) {
-            die;
-        }
-
         //Fetch the response from CCAvenue
         $encResp = Tools::getValue('encResp');
+
         $encryptionKey = Configuration::get('CCAVENUE_ENCRYPTION_KEY');
         $response = $this->module->decrypt($encResp, $encryptionKey);
         parse_str($response, $responseData);
@@ -56,17 +50,32 @@ class CcavenueValidationModuleFrontController extends ModuleFrontController
         $secure_key = $responseData['merchant_param3'];
         $amount = $responseData['amount'];
 
-        /**
-         * Restore the context from the $cart_id & the $customer_id to process the validation properly.
-         */
-        Context::getContext()->cart = new Cart((int)$cart_id);
-        Context::getContext()->customer = new Customer((int)$customer_id);
-        Context::getContext()->currency = new Currency((int)Context::getContext()->cart->id_currency);
-        Context::getContext()->language = new Language((int)Context::getContext()->customer->id_lang);
-
-        $secure_key = Context::getContext()->customer->secure_key;
+        $customer = new Customer((int)$customer_id);
+        $cart =  new Cart((int)$cart_id);
 
         $order_status = $responseData['order_status'];
+
+        $total = $cart->getOrderTotal(true, Cart::BOTH);
+
+        if ($customer_id == 0 || $cart->id_address_delivery == 0 || $cart->id_address_invoice == 0 || !$this->module->active) {
+            Tools::redirectLink(__PS_BASE_URI__.'order.php?step=1');
+        }
+
+        // Check that this payment option is still available in case the customer changed his address just before the end of the checkout process
+        $authorized = false;
+        foreach (Module::getPaymentModules() as $module) {
+            if ($module['name'] == 'ccavenue') {
+                $authorized = true;
+                break;
+            }
+        }
+        if (!$authorized) {
+            die(Tools::displayError('This payment method is not available.'));
+        }
+        
+        if (!Validate::isLoadedObject($customer)) {
+            Tools::redirectLink(__PS_BASE_URI__.'order.php?step=1');
+        }
 
         if($order_status==="Success")
         {
@@ -98,12 +107,12 @@ class CcavenueValidationModuleFrontController extends ModuleFrontController
 
         $module_name = $this->module->displayName;
         $currency_id = (int)Context::getContext()->currency->id;
+        $module_id = $this->module->id;
 
         $this->module->validateOrder($cart_id, $payment_status, $amount, $module_name, $message, array(), $currency_id, false, $secure_key);
 
-                /**
-         * If the order has been validated we try to retrieve it
-         */
+        
+
         $order_id = Order::getOrderByCartId((int)$cart_id);
 
         if ($order_id) {
@@ -111,8 +120,8 @@ class CcavenueValidationModuleFrontController extends ModuleFrontController
              * The order has been placed so we redirect the customer on the confirmation page.
              */
 
-            $module_id = $this->module->id;
-            Tools::redirect('index.php?controller=order-confirmation&id_cart='.$cart_id.'&id_module='.$module_id.'&id_order='.$order_id.'&key='.$secure_key);
+            Tools::redirectLink(__PS_BASE_URI__.'order-confirmation.php?key='.$secure_key.'&id_cart='.(int)$cart_id.'&id_module='.(int)$module_id.'&id_order='.(int)$order_id);
+
         } else {
             /**
              * An error occured and is shown on a new page.
@@ -128,13 +137,18 @@ class CcavenueValidationModuleFrontController extends ModuleFrontController
          * Create the breadcrumb for your ModuleFrontController.
          */
         $this->context->smarty->assign('path', '
-            <a href="'.$this->context->link->getPageLink('order', null, null, 'step=3').'">'.$this->module->l('Payment').'</a>
+            <a href="'.$this->context->link->getPageLink('order', null, null, 'step=1').'">'.$this->module->l('Payment').'</a>
             <span class="navigation-pipe">&gt;</span>'.$this->module->l('Error'));
 
         /**
          * Set error message and description for the template.
          */
         array_push($this->errors, $this->module->l($message), $description);
-        return $this->setTemplate('error.tpl');
+
+        $this->context->smarty->assign('errors', $this->errors);
+
+        return $this->setTemplate('module:ccavenue/views/templates/front/error.tpl');
     }
+
+    
 }

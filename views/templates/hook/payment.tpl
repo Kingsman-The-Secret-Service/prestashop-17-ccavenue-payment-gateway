@@ -22,21 +22,6 @@
 *  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
-<p class="row">
-<form method="post" name="redirect" action="https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction"> 
-	<input type="hidden" name="encRequest" value="{$encRequest}" />
-	<input type="hidden" name="access_code" value="{$access_code}" />
-
-	<button type="submit" name="ccavenue" class="button btn btn-default  btn-block ">
-		<span>
-			<h3>
-				<strong>
-				Pay by 
-				</strong>
-				<img src="{$module_dir|escape:'html':'UTF-8'}views/img/ccavenue-payment-button.png" alt="{l s='Pay with CCAvenue' mod='ccavenue'}"  />
-			</h3>
-		</span>
-	</button>
-</form>
-</p>
-
+<div class="col-md-12 hidden-xs-down">
+<img src="modules/ccavenue/ccavenue-payment-button.png" alt="Pay by CCAvenue" />
+</div>
