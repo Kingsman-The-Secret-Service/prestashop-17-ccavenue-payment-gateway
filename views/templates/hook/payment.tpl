@@ -23,5 +23,5 @@
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 <div class="col-md-12 hidden-xs-down">
-<img src="modules/ccavenue/ccavenue-payment-button.png" alt="Pay by CCAvenue" />
+<a href="https://www.ccavenue.com" target="_blank"><img src="modules/ccavenue/views/img/ccavenue_info.png" alt="Pay by CCAvenue" /></a>
 </div>

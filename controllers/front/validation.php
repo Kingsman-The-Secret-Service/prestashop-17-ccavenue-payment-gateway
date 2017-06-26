@@ -85,36 +85,28 @@ class CcavenueValidationModuleFrontController extends ModuleFrontController
         $module_name = $this->module->displayName;
         $module_id = $this->module->id;
 
-        // echo "<pre>";
-        // print_r($cart);
-        // die;
-
         if ($customer_id == 0 || $cart->id_address_delivery == 0 || $cart->id_address_invoice == 0 || !$this->module->active) {
 
             $this->errors[] = $this->l('An error occured');
             $this->redirectWithNotifications($checkoutUrl);
         }
-
-       
         
         if (!Validate::isLoadedObject($customer)) {
             $this->errors[] = $this->l('An error occured');
             $this->redirectWithNotifications($checkoutUrl);
         }
 
-        if($order_status !== "Success")
+        if($order_status === "Success")
         {   
 
             $currency_id = (int)Context::getContext()->currency->id;
-
-            $payment_status = Configuration::get('PS_OS_PAYMENT'); 
+            
             $this->success[] = $this->l("Thank you for shopping with us. Your transaction is successful. We will be shipping your order to you soon.");
 
-            $this->module->validateOrder($cart_id, $payment_status, $amount, $module_name, null, array(), $currency_id, false, $secure_key);
+            $payment_status = Configuration::get('PS_OS_PREPARATION');              
+            $this->module->validateOrder($cart_id, $payment_status, $amount, $module_name, null, array('transaction_id' => $responseData['tracking_id']), $currency_id, false, $secure_key);
 
             $confirmationUrl = __PS_BASE_URI__.'order-confirmation.php?key='.$secure_key.'&id_cart='.(int)$cart_id.'&id_module='.(int)$module_id.'&id_order='.(int)$order_id;
-
-            $this->context->smarty->assign('displayPrice', $amount);
 
             $this->redirectWithNotifications($confirmationUrl);
         }
@@ -127,10 +119,10 @@ class CcavenueValidationModuleFrontController extends ModuleFrontController
             $this->errors[] = $this->l("Transaction Declined");
         }
 
-        $this->errors[] = $this->l("Please contact the merchant to have more informations");
-        
         if($responseData["status_message"] != "null")
                 $this->errors[] = $this->l($responseData["status_message"]);
+
+        $this->errors[] = $this->l("Please contact the merchant to have more informations");
         
         return $this->redirectWithNotifications($checkoutUrl);
     }   

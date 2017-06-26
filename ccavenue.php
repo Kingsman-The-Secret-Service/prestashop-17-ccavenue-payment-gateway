@@ -52,13 +52,9 @@ class Ccavenue extends PaymentModule
 
         $this->confirmUninstall = $this->l('Are you sure wanna detele this module?');
 
-        $this->ps_versions_compliancy = array('min' => '1.6', 'max' => _PS_VERSION_);
+        $this->ps_versions_compliancy = array('min' => '1.7', 'max' => _PS_VERSION_);
     }
 
-    /**
-     * Don't forget to create update methods if needed:
-     * http://doc.prestashop.com/display/PS16/Enabling+the+Auto-Update
-     */
     public function install()
     {
         if (extension_loaded('curl') == false)
@@ -72,8 +68,7 @@ class Ccavenue extends PaymentModule
         include(dirname(__FILE__).'/sql/install.php');
 
         return parent::install() 
-            &&  $this->registerHook('paymentOptions')
-            &&  $this->registerHook('paymentReturn');
+            &&  $this->registerHook('paymentOptions');
     }
 
     public function uninstall()
@@ -85,26 +80,16 @@ class Ccavenue extends PaymentModule
         return parent::uninstall();
     }
 
-    /**
-     * Load the configuration form
-     */
     public function getContent()
     {
-        /**
-         * If values have been submitted in the form, process.
-         */
+
         if (((bool)Tools::isSubmit('submitCcavenueModule')) == true) {
             $this->postProcess();
         }
 
-        // $this->context->smarty->assign('module_dir', $this->_path);
-
         return $this->renderForm();
     }
 
-    /**
-     * Create the form that will be displayed in the configuration of your module.
-     */
     protected function renderForm()
     {
         $helper = new HelperForm();
@@ -130,9 +115,6 @@ class Ccavenue extends PaymentModule
         return $helper->generateForm(array($this->getConfigForm()));
     }
 
-    /**
-     * Create the structure of your form.
-     */
     protected function getConfigForm()
     {
 
@@ -237,9 +219,6 @@ class Ccavenue extends PaymentModule
         );
     }
 
-    /**
-     * Set values for the inputs.
-     */
     protected function getConfigFormValues()
     {
     
@@ -254,9 +233,6 @@ class Ccavenue extends PaymentModule
         );
     }
 
-    /**
-     * Save form data.
-     */
     protected function postProcess()
     {
         $form_values = $this->getConfigFormValues();
@@ -273,64 +249,21 @@ class Ccavenue extends PaymentModule
         }
 
         $newOption = new PaymentOption();
-        $newOption->setCallToActionText($this->trans('Pay by CCAvenue', array(), 'Modules.Ccavenue.Shop'))
+        $newOption
+        ->setCallToActionText($this->trans('Pay by', array(), 'Modules.Ccavenue.Shop'))
             ->setAction("https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction")
             ->setInputs($this->getPaymentDetails())
+            ->setLogo(Media::getMediaPath(_PS_MODULE_DIR_.$this->name.'/views/img/ccavenue_logo_sm.png'))
             ->setAdditionalInformation($this->fetch('module:ccavenue/views/templates/hook/payment.tpl'));
 
         $payment_options = [
             $newOption,
         ];
 
-        // Tools::redirectLink(__PS_BASE_URI__.'order.php?step=1');
-
         return $payment_options;
     }
 
-    public function hookPaymentReturn($params)
-    {
-
-        if ($this->active == false)
-            return;
-
-        $order = $params['order'];
-
-
-        // echo "<pre>";
-        // print_r($order);
-        // die;
-
-         $state = $params['order']->getCurrentState();
-
-        if (in_array($state, array(Configuration::get('PS_OS_PAYMENT'), Configuration::get('PS_OS_OUTOFSTOCK')))) {
-
-            $this->smarty->assign(array(
-                'total_to_pay' => Tools::displayPrice(
-                    $params['order']->getOrdersTotalPaid(),
-                    new Currency($params['order']->id_currency),
-                    false
-                ),
-                'shop_name' => $this->context->shop->name,
-                'status' => 'ok',
-                'id_order' => $params['order']->id
-            ));
-
-            if (isset($params['order']->reference) && !empty($params['order']->reference)) {
-                $this->smarty->assign('reference', $params['order']->reference);
-            }
-        } else {
-
-            $this->smarty->assign('shop_name', $this->context->shop->name);
-            $this->smarty->assign('status', 'failed');
-        }
-
-
-        return $this->fetch('module:ccavenue/views/templates/hook/payment_return.tpl');
-    }
-
-     public function getPaymentDetails(){
-
-
+    public function getPaymentDetails(){
         
         $cart = Context::getContext()->cart;
 
@@ -352,7 +285,6 @@ class Ccavenue extends PaymentModule
         $Redirect_Url = $this->context->link->getModuleLink('ccavenue', 'validation', [], true);
         $Cancel_Url  = $this->context->link->getModuleLink('ccavenue', 'validation', ['action' => 'error'], true);
 
-
         //Billing Address
         $billing_address = new Address(intval($cart->id_address_invoice));
         $billing_name       = $billing_address->firstname ." ". $billing_address->lastname;
@@ -366,7 +298,6 @@ class Ccavenue extends PaymentModule
         $billing_country    = $bill_country_obj->getNameById($lang_id,$billing_address->id_country);
         $billing_state      = $bill_state_obj->getNameById($billing_address->id_state); 
 
-
         //Delivery Address
         $delivery_address= new Address(intval($cart->id_address_delivery));
         $delivery_name      = $delivery_address->firstname." " . $delivery_address->lastname;
@@ -379,7 +310,6 @@ class Ccavenue extends PaymentModule
         $delivery_country   = $deli_country_obj->getNameById($lang_id,$delivery_address->id_country);
         $delivery_state     = $deli_state_obj->getNameById($delivery_address->id_state);    
 
-
         //Merchant Params
         $merchant_param1    = (int)($cart->id);
         $merchant_param2    = (int)$customer->id;
@@ -390,7 +320,6 @@ class Ccavenue extends PaymentModule
         $cust_notes_message = Message::getMessageByCartId(intval($cart->id));
         $cust_notes         = $cust_notes_message['message'];
         $billing_cust_notes = $cust_notes;
-
  
         //Merchant Data
         $merchant_data = array();
@@ -421,7 +350,6 @@ class Ccavenue extends PaymentModule
         $merchant_data['merchant_param3']  = $merchant_param3;
         $merchant_data['merchant_param4']  = $merchant_param4;
         $merchant_data['merchant_param5']  = $merchant_param5;
-
 
         $encrypted_data=$this->encrypt(http_build_query($merchant_data),$encryption_key);
 
@@ -495,5 +423,4 @@ class Ccavenue extends PaymentModule
         return $binString; 
     } 
 
-   
 }
