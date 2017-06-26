@@ -22,12 +22,18 @@
 *  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
+{extends file='page.tpl'}
 
-<div>
-	<h3>{l s='An error occurred' mod='ccavenue'}:</h3>
-	<ul class="alert alert-danger">
-		{foreach from=$errors item='error'}
-			<li>{$error|escape:'htmlall':'UTF-8'}.</li>
-		{/foreach}
-	</ul>
-</div>
+{block name="page_content"}
+  <section>
+	  <div>
+		<h3>{l s='An error occurred' mod='ccavenue'}:</h3>
+		<ul class="alert alert-danger">
+			{foreach from=$errors item='error'}
+				<li>{$error|escape:'htmlall':'UTF-8'}.</li>
+			{/foreach}
+		</ul>
+	</div>
+   
+  </section>
+{/block}

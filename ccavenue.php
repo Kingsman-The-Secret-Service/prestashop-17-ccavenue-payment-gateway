@@ -281,6 +281,8 @@ class Ccavenue extends PaymentModule
             $newOption,
         ];
 
+        // Tools::redirectLink(__PS_BASE_URI__.'order.php?step=1');
+
         return $payment_options;
     }
 
@@ -290,22 +292,44 @@ class Ccavenue extends PaymentModule
         if ($this->active == false)
             return;
 
-        $order = $params['objOrder'];
+        $order = $params['order'];
 
-        if ($order->getCurrentOrderState()->id != Configuration::get('PS_OS_ERROR'))
-            $this->smarty->assign('status', 'ok');
 
-        $this->smarty->assign(array(
-            'id_order' => $order->id,
-            'reference' => $order->reference,
-            'params' => $params,
-            'total' => Tools::displayPrice($params['total_to_pay'], $params['currencyObj'], false),
-        ));
+        // echo "<pre>";
+        // print_r($order);
+        // die;
 
-        return $this->display(__FILE__, 'views/templates/hook/payment_return.tpl');
+         $state = $params['order']->getCurrentState();
+
+        if (in_array($state, array(Configuration::get('PS_OS_PAYMENT'), Configuration::get('PS_OS_OUTOFSTOCK')))) {
+
+            $this->smarty->assign(array(
+                'total_to_pay' => Tools::displayPrice(
+                    $params['order']->getOrdersTotalPaid(),
+                    new Currency($params['order']->id_currency),
+                    false
+                ),
+                'shop_name' => $this->context->shop->name,
+                'status' => 'ok',
+                'id_order' => $params['order']->id
+            ));
+
+            if (isset($params['order']->reference) && !empty($params['order']->reference)) {
+                $this->smarty->assign('reference', $params['order']->reference);
+            }
+        } else {
+
+            $this->smarty->assign('shop_name', $this->context->shop->name);
+            $this->smarty->assign('status', 'failed');
+        }
+
+
+        return $this->fetch('module:ccavenue/views/templates/hook/payment_return.tpl');
     }
 
      public function getPaymentDetails(){
+
+
         
         $cart = Context::getContext()->cart;
 
@@ -326,6 +350,7 @@ class Ccavenue extends PaymentModule
         //URL
         $Redirect_Url = $this->context->link->getModuleLink('ccavenue', 'validation', [], true);
         $Cancel_Url  = $this->context->link->getModuleLink('ccavenue', 'validation', ['action' => 'error'], true);
+
 
         //Billing Address
         $billing_address = new Address(intval($cart->id_address_invoice));
@@ -365,7 +390,7 @@ class Ccavenue extends PaymentModule
         $cust_notes         = $cust_notes_message['message'];
         $billing_cust_notes = $cust_notes;
 
-
+ 
         //Merchant Data
         $merchant_data = array();
         $merchant_data['merchant_id']      = $merchant_id;
